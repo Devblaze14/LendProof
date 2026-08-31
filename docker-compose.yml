@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: loanapp
+      POSTGRES_PASSWORD: loanapp
+      POSTGRES_DB: loan_copilot
+    ports: ["5432:5432"]
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backend/migrations/001_init_local.sql:/docker-entrypoint-initdb.d/001_init_local.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loanapp -d loan_copilot"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_MODE: local
+      DATABASE_URL: postgresql+psycopg2://loanapp:loanapp@db:5432/loan_copilot
+      GROQ_MOCK: "true"
+    ports: ["8000:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/../data
+    command: ["sh", "-c", "python -m app.seed.seed_db && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports: ["5173:5173"]
+    depends_on: [backend]
+
+volumes:
+  db_data:

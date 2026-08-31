@@ -1,0 +1,17 @@
+[
+  {
+    "email": "operator@demo.local",
+    "role": "operator",
+    "name": "Dana Operator"
+  },
+  {
+    "email": "reviewer@demo.local",
+    "role": "reviewer",
+    "name": "Rae Reviewer"
+  },
+  {
+    "email": "consumer@demo.local",
+    "role": "consumer",
+    "name": "Cam Consumer"
+  }
+]

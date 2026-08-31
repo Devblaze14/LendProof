@@ -1,0 +1,153 @@
+[
+  {
+    "rule_key": "required_loan_id",
+    "field": "loan_id",
+    "rule_type": "required",
+    "params": {},
+    "severity": "critical",
+    "message_template": "loan_id is required"
+  },
+  {
+    "rule_key": "required_borrower_id",
+    "field": "borrower_id",
+    "rule_type": "required",
+    "params": {},
+    "severity": "high",
+    "message_template": "borrower_id is required"
+  },
+  {
+    "rule_key": "valid_origination_date",
+    "field": "origination_date",
+    "rule_type": "regex",
+    "params": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "severity": "high",
+    "message_template": "origination_date is not a valid ISO date"
+  },
+  {
+    "rule_key": "maturity_after_origination",
+    "field": "maturity_date",
+    "rule_type": "date_order",
+    "params": {
+      "after": "origination_date"
+    },
+    "severity": "critical",
+    "message_template": "maturity_date must be after origination_date"
+  },
+  {
+    "rule_key": "no_negative_principal",
+    "field": "original_principal",
+    "rule_type": "range",
+    "params": {
+      "min": 0
+    },
+    "severity": "critical",
+    "message_template": "original_principal cannot be negative"
+  },
+  {
+    "rule_key": "balance_not_exceeding_principal",
+    "field": "current_balance",
+    "rule_type": "cross_field",
+    "params": {
+      "must_not_exceed": "original_principal"
+    },
+    "severity": "high",
+    "message_template": "current_balance exceeds original_principal"
+  },
+  {
+    "rule_key": "interest_rate_range",
+    "field": "interest_rate",
+    "rule_type": "range",
+    "params": {
+      "min": 0.5,
+      "max": 25.0
+    },
+    "severity": "high",
+    "message_template": "interest_rate is outside the expected range"
+  },
+  {
+    "rule_key": "status_dpd_consistency",
+    "field": "payment_status",
+    "rule_type": "cross_field",
+    "params": {
+      "check": "status_dpd_consistency"
+    },
+    "severity": "medium",
+    "message_template": "payment_status is inconsistent with days_past_due"
+  },
+  {
+    "rule_key": "required_document_status",
+    "field": "document_status",
+    "rule_type": "required",
+    "params": {},
+    "severity": "medium",
+    "message_template": "document_status is missing"
+  },
+  {
+    "rule_key": "stale_record",
+    "field": "last_updated_at",
+    "rule_type": "staleness",
+    "params": {
+      "max_days": 365
+    },
+    "severity": "low",
+    "message_template": "record has not been updated in over a year"
+  },
+  {
+    "rule_key": "valid_state_code",
+    "field": "borrower_state",
+    "rule_type": "regex",
+    "params": {
+      "pattern": "^(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$"
+    },
+    "severity": "medium",
+    "message_template": "borrower_state is not a recognized US state code"
+  },
+  {
+    "rule_key": "duplicate_loan_id",
+    "field": "loan_id",
+    "rule_type": "duplicate",
+    "params": {
+      "keys": [
+        "loan_id"
+      ]
+    },
+    "severity": "critical",
+    "message_template": "loan_id appears more than once in this batch"
+  },
+  {
+    "rule_key": "duplicate_borrower_amount_origination",
+    "field": "borrower_id",
+    "rule_type": "duplicate",
+    "params": {
+      "keys": [
+        "borrower_id",
+        "original_principal",
+        "origination_date"
+      ]
+    },
+    "severity": "high",
+    "message_template": "borrower_id + original_principal + origination_date combination repeats"
+  },
+  {
+    "rule_key": "closed_positive_balance",
+    "field": "payment_status",
+    "rule_type": "cross_field",
+    "params": {
+      "check": "closed_zero_balance"
+    },
+    "severity": "high",
+    "message_template": "loan is marked closed but still shows a positive balance"
+  },
+  {
+    "rule_key": "cross_file_conflict",
+    "field": null,
+    "rule_type": "cross_file",
+    "params": {
+      "source": "servicer_update"
+    },
+    "severity": "medium",
+    "message_template": "value conflicts with servicer_update.csv"
+  }
+]

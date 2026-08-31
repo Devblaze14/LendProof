@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/client.ts","./src/components/chainlink.tsx","./src/components/dashboardshell.tsx","./src/components/severitybadge.tsx","./src/pages/consumerdashboard.tsx","./src/pages/home.tsx","./src/pages/login.tsx","./src/pages/operatordashboard.tsx","./src/pages/reviewerdashboard.tsx"],"version":"5.9.3"}
