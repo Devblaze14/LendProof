@@ -1,9 +1,52 @@
+# Environment and secrets
 .env
+.env.*
+!.env.example
 keys.md
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+build/
+pip-wheel-metadata/
+
+# Node and frontend tooling
 node_modules/
 dist/
+.vite/
+.turbo/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+
+# Application runtime data
 storage/
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# Editors and operating systems
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
