@@ -168,5 +168,4 @@ unreviewed development deployment.
 
 ## License
 
-No license has been selected yet. Until a license is added, the repository should be treated as
-all-rights-reserved and not reused, redistributed, or deployed commercially without permission.
+MIT 
