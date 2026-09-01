@@ -1,9 +1,13 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardShell, StatCard, SectionHeader, EmptyState, Icon } from "../components/DashboardShell";
 import { api, ApiError } from "../api/client";
+import { BarChart, ChartCard, TrendChart } from "../components/ChartCards";
 
 export default function OperatorDashboard() {
+  const location = useLocation();
+  const view = location.pathname.endsWith("/upload") ? "upload" : location.pathname.endsWith("/analytics") ? "analytics" : "dashboard";
   const [sourceType, setSourceType] = useState("loan_tape");
   const [message, setMessage] = useState<{text:string;type:string}|null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -29,7 +33,7 @@ export default function OperatorDashboard() {
   const q = summary.data?.data_quality_score ?? 0;
 
   return (
-    <DashboardShell title="Operator Dashboard">
+    <DashboardShell title={view === "upload" ? "Upload Center" : view === "analytics" ? "Operations Analytics" : "Operator Dashboard"}>
       <div className="grid grid-cols-4 gap-5 mb-8">
         <StatCard label="Total Loans" value={(summary.data?.total_loans??0).toLocaleString()} icon="description" color="accent" />
         <StatCard label="Open Exceptions" value={(summary.data?.open_exceptions??0).toLocaleString()} icon="warning" color="warning" />
@@ -37,7 +41,12 @@ export default function OperatorDashboard() {
         <StatCard label="Verified Records" value={(summary.data?.verified_records??0).toLocaleString()} icon="verified" color="info" />
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      {view === "analytics" && <div className="grid grid-cols-2 gap-6 mb-8">
+        <ChartCard title="Validation throughput" eyebrow="Last 7 days"><TrendChart values={[42, 58, 51, 74, 68, 89, 96]} /></ChartCard>
+        <ChartCard title="Pipeline activity" eyebrow="Current period"><BarChart values={[82, 64, 91, 48]} /></ChartCard>
+      </div>}
+
+      <div className={`grid grid-cols-3 gap-6 ${view === "analytics" ? "hidden" : ""}`}>
         <div className="col-span-2">
           <SectionHeader title="Upload Loan File" subtitle="Drag & drop or select a CSV" />
           <div className={`glass-card p-8 transition-all ${dragActive?"border-accent bg-accent/5 glow-accent":""}`}

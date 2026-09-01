@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardShell, EmptyState, SectionHeader, Icon } from "../components/DashboardShell";
 import { SeverityBadge } from "../components/SeverityBadge";
 import { api } from "../api/client";
+import { ChartCard, DonutChart, TrendChart } from "../components/ChartCards";
 
 export default function ReviewerDashboard() {
+  const location = useLocation();
+  const view = location.pathname.endsWith("/queue") ? "queue" : location.pathname.endsWith("/insights") ? "insights" : "dashboard";
   const [statusFilter, setStatusFilter] = useState("open");
   const [selectedId, setSelectedId] = useState<string|null>(null);
   const queryClient = useQueryClient();
@@ -39,7 +43,11 @@ export default function ReviewerDashboard() {
   ];
 
   return (
-    <DashboardShell title="Reviewer Dashboard">
+    <DashboardShell title={view === "queue" ? "Exception Queue" : view === "insights" ? "AI Insights" : "Reviewer Dashboard"}>
+      {view === "insights" && <div className="grid grid-cols-2 gap-6 mb-8">
+        <ChartCard title="Review confidence" eyebrow="AI-assisted decisions"><DonutChart value={87} label="confidence" /></ChartCard>
+        <ChartCard title="Exceptions resolved" eyebrow="Weekly trend"><TrendChart values={[18, 25, 21, 36, 31, 44, 52]} color="#ffad2f" /></ChartCard>
+      </div>}
       {/* Status Tabs */}
       <div className="flex items-center gap-2 mb-6">
         {statusTabs.map(tab => (

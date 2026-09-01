@@ -20,6 +20,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("operator");
   const formRef = useRef<HTMLFormElement>(null);
   const navigate = useNavigate();
 
@@ -53,6 +54,7 @@ export default function Login() {
   }
 
   function selectDemo(account: typeof DEMO_ACCOUNTS[0]) {
+    setSelectedRole(account.label.toLowerCase());
     setEmail(account.email);
     setPassword("DemoPass123!");
     setError(null);
@@ -82,6 +84,14 @@ export default function Login() {
         <div className="glass-card p-8">
           <h2 className="text-lg font-semibold text-white mb-1">Welcome back</h2>
           <p className="text-sm text-subtle mb-6">Sign in for role-based tools, or continue as a read-only guest.</p>
+
+          <div className="role-tabs" aria-label="Choose workspace">
+            {DEMO_ACCOUNTS.map((account) => (
+              <button key={account.label} type="button" onClick={() => selectDemo(account)} className={selectedRole === account.label.toLowerCase() ? "role-tab active" : "role-tab"}>
+                <Icon name={account.icon} size={16} /> {account.label}
+              </button>
+            ))}
+          </div>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             <div>

@@ -13,9 +13,9 @@
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  --accent-primary: #6366f1;
-  --accent-secondary: #818cf8;
-  --accent-glow: rgba(99, 102, 241, 0.15);
+  --accent-primary: #b8ff5a;
+  --accent-secondary: #d2ff91;
+  --accent-glow: rgba(184, 255, 90, 0.15);
   --success: #10b981;
   --success-glow: rgba(16, 185, 129, 0.15);
   --danger: #ef4444;
@@ -74,6 +74,35 @@ body {
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
+
+/* Reference-inspired data visualization surfaces. */
+.chart-card { background: #202020; border: 1px solid rgba(255,255,255,.07); border-radius: 20px; padding: 22px; min-height: 220px; box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+.chart-card-heading { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+.chart-card-heading h3 { color:#f7f8f4; font-size:15px; margin:3px 0 0; font-weight:700; letter-spacing:-.02em; }
+.chart-eyebrow { color:#7f8981; font-size:9px; text-transform:uppercase; letter-spacing:.14em; margin:0; }
+.chart-menu { color:#89918a; letter-spacing:3px; font-size:14px; }
+.trend-chart { height:145px; }
+.trend-chart svg { width:100%; height:112px; overflow:visible; }
+.chart-axis { display:flex; justify-content:space-between; color:#777f79; font-size:10px; }
+.bar-chart { display:flex; align-items:flex-end; justify-content:space-around; height:150px; gap:14px; padding-top:10px; }
+.bar-column { display:flex; align-items:center; flex-direction:column; height:100%; flex:1; gap:7px; }
+.bar-value { color:#e9eee9; font:600 11px ui-monospace,monospace; }
+.bar-track { display:flex; align-items:flex-end; width:100%; max-width:30px; flex:1; background:rgba(255,255,255,.05); border-radius:999px; overflow:hidden; }
+.bar-track i { display:block; width:100%; border-radius:999px; box-shadow:0 0 18px rgba(184,255,90,.18); }
+.bar-label { color:#7f8981; font-size:10px; }
+.donut-chart { display:flex; align-items:center; justify-content:center; gap:20px; min-height:145px; }
+.donut-chart svg { width:125px; height:125px; transform:rotate(-90deg); }
+.donut-track,.donut-value { fill:none; stroke-width:10; }
+.donut-track { stroke:rgba(255,255,255,.08); }
+.donut-value { stroke:#b8ff5a; stroke-linecap:round; transition:stroke-dashoffset .8s ease; }
+.donut-chart div { display:flex; flex-direction:column; }
+.donut-chart strong { color:#f7f8f4; font-size:28px; letter-spacing:-.06em; }
+.donut-chart span { color:#89918a; font-size:11px; }
+.role-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:5px; margin-bottom:22px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:14px; }
+.role-tab { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 6px; border:0; border-radius:10px; background:transparent; color:#87918a; font-size:11px; font-weight:700; cursor:pointer; transition:all .2s ease; }
+.role-tab:hover { color:#f5f7f4; background:rgba(255,255,255,.05); }
+.role-tab.active { color:#111; background:#b8ff5a; box-shadow:0 0 20px rgba(184,255,90,.18); }
+@media (max-width: 720px) { .chart-card { min-height:200px; } .role-tabs { grid-template-columns:1fr; } }
 
 /* ─── Glow Effects ─── */
 .glow-accent { box-shadow: 0 0 20px var(--accent-glow), 0 0 60px rgba(99, 102, 241, 0.05); }

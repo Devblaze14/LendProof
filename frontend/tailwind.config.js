@@ -1,5 +1,5 @@
 /** Design tokens for LendProof — Loan Data Verification Copilot.
- *  Dark-mode glassmorphic design with indigo accent system. */
+ *  Dark-mode glassmorphic design with lime and orange dashboard accents. */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
@@ -12,10 +12,10 @@ export default {
           glass: "rgba(255, 255, 255, 0.03)",
         },
         accent: {
-          DEFAULT: "#6366f1",
-          light: "#818cf8",
-          dark: "#4f46e5",
-          glow: "rgba(99, 102, 241, 0.15)",
+          DEFAULT: "#b8ff5a",
+          light: "#d2ff91",
+          dark: "#7dbd32",
+          glow: "rgba(184, 255, 90, 0.15)",
         },
         verified: "#10b981",
         severity: {

@@ -1,10 +1,18 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardShell, StatCard, SectionHeader, EmptyState, Icon } from "../components/DashboardShell";
 import { VerifiedBadge, IntegrityStatus } from "../components/ChainLink";
 import { api } from "../api/client";
+import { ChartCard, DonutChart, TrendChart } from "../components/ChartCards";
 
 export default function ConsumerDashboard() {
+  const location = useLocation();
+  const view = location.pathname.endsWith("/records")
+    ? "records"
+    : location.pathname.endsWith("/integrity")
+      ? "integrity"
+      : "dashboard";
   const summary = useQuery({ queryKey: ["summary"], queryFn: api.summary });
   const verified = useQuery({ queryKey: ["verified"], queryFn: api.listVerified });
   const [selectedVerified, setSelectedVerified] = useState<string|null>(null);
@@ -18,7 +26,7 @@ export default function ConsumerDashboard() {
   const q = summary.data?.data_quality_score ?? 0;
 
   return (
-    <DashboardShell title="Data Consumer Dashboard">
+    <DashboardShell title={view === "records" ? "Verified Records" : view === "integrity" ? "Chain Integrity" : "Data Consumer Dashboard"}>
       {/* Stats */}
       <div className="grid grid-cols-4 gap-5 mb-8">
         <StatCard label="Data Quality Score" value={`${q}%`} icon="speed" color={q>=80?"success":q>=50?"warning":"danger"} />
@@ -27,7 +35,12 @@ export default function ConsumerDashboard() {
         <StatCard label="Open Exceptions" value={(summary.data?.open_exceptions??0).toLocaleString()} icon="warning" color="warning" />
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      {view === "dashboard" && <div className="grid grid-cols-2 gap-6 mb-8">
+        <ChartCard title="Verification activity" eyebrow="Last 7 days"><TrendChart values={[30, 42, 37, 58, 54, 71, 84]} /></ChartCard>
+        <ChartCard title="Data quality" eyebrow="Portfolio health"><DonutChart value={q} label="quality score" /></ChartCard>
+      </div>}
+
+      <div className={`grid grid-cols-3 gap-6 ${view === "dashboard" ? "" : "grid-cols-1"}`}>
         {/* Verified Records List */}
         <div className="col-span-2">
           <SectionHeader
@@ -78,7 +91,7 @@ export default function ConsumerDashboard() {
         </div>
 
         {/* Integrity Panel */}
-        <div className="space-y-6">
+        <div className={view === "records" ? "hidden" : "space-y-6"}>
           <SectionHeader title="Chain Integrity" subtitle="Verify tamper-evidence" />
 
           {!selectedVerified ? (

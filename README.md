@@ -40,7 +40,7 @@ docker compose up --build
 
 The backend waits for Postgres, then seeds the demo users and validation rules automatically. Open:
 
-- Frontend: http://localhost:5173
+- Frontend: 
 - API health: http://localhost:8000/health
 - Interactive API docs: http://localhost:8000/docs
 
