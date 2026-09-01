@@ -16,7 +16,9 @@ Built for the Intain Campus FinTech Challenge 2026 - Full Stack Track.
 - Role-based workflows for operator, reviewer, and consumer users.
 - Human-in-the-loop exception decisions with optional AI recommendations.
 - Immutable-style audit events and hash-chain integrity verification.
-- Offline-first local mode: Postgres, JWT authentication, and mocked AI require no external accounts.
+- Supabase-backed deployment with Auth, Postgres, private source-file storage, and role profiles.
+- Groq-powered exception explanations and batch triage, with an offline mock mode for local demos.
+- Searchable, severity-filtered review queue with reviewer notes, correction requests, and audit history.
 - CI checks for backend tests and frontend production builds.
 
 ## Architecture
@@ -27,7 +29,33 @@ Built for the Intain Campus FinTech Challenge 2026 - Full Stack Track.
 | API | FastAPI, Pydantic | Authentication, uploads, validation, review, audit APIs |
 | Persistence | PostgreSQL, SQLAlchemy | Users, loan records, exceptions, AI decisions, audit events |
 | AI | Groq API with mock mode | Review recommendations with timeout/retry/fallback behavior |
-| Delivery | Docker Compose, GitHub Actions | Reproducible local stack and automated checks |
+| Delivery | Vercel, Supabase, Docker Compose | Serverless deployment, durable data, and local development |
+
+## Production Deployment
+
+LendProof deploys as a Vite frontend plus a FastAPI Vercel Function. Supabase
+provides Auth, Postgres, and private storage for source-file lineage.
+
+1. In the Supabase SQL Editor, run these migrations in order:
+
+```text
+backend/migrations/001_init_supabase.sql
+backend/migrations/002_supabase_profiles.sql
+backend/migrations/003_supabase_storage.sql
+```
+
+2. Create Operator, Reviewer, and Consumer users in Supabase Auth. Give each
+user raw metadata such as `{"role":"reviewer","name":"Reviewer Demo"}`.
+The profile trigger assigns their in-app role.
+3. In Vercel, import this repository from its root directory. Add every value
+from [`.env.supabase.example`](.env.supabase.example) to both Production and
+Preview environments. Do not set `VITE_API_BASE_URL` in Vercel.
+4. Deploy. [`vercel.json`](vercel.json) builds the frontend and routes
+`/api/v1/*` requests to FastAPI in the same deployment.
+
+Never commit a populated `.env` file or expose `SUPABASE_SERVICE_ROLE_KEY`
+through a `VITE_` variable. Full setup details are in
+[`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md).
 
 ## Quick start with Docker
 
@@ -40,7 +68,7 @@ docker compose up --build
 
 The backend waits for Postgres, then seeds the demo users and validation rules automatically. Open:
 
-- Frontend: 
+- Frontend: http://localhost:5173/
 - API health: http://localhost:8000/health
 - Interactive API docs: http://localhost:8000/docs
 
@@ -58,12 +86,11 @@ docker compose down -v
 
 ## Demo flow
 
-1. Use **Continue as guest** for the read-only consumer view, or sign in as the operator to upload `data/loan_tape.csv`.
-2. Open the reviewer dashboard and inspect the generated exception queue.
-3. Request AI review for an exception. In the default mock mode this is fully offline.
-4. Approve or reject the exception as the reviewer.
-5. Sign in as the consumer to inspect verified records and the data-quality summary.
-6. Use the API docs to inspect audit events and verify the hash chain.
+1. Sign in as the Operator and upload `data/loan_tape.csv`.
+2. Show the normalization and validation summary, then switch to the Reviewer.
+3. Search or filter exceptions, request a Groq explanation, add a note, and request a correction or approve a clean record.
+4. Open AI Insights to generate a batch triage briefing. AI recommendations remain separate from human decisions.
+5. Sign in as the Consumer, select a verified record, verify its hash chain, inspect its audit timeline, and export verified data.
 
 Demo credentials are listed in [`TEST_CREDENTIALS.md`](TEST_CREDENTIALS.md). They are intended only
 for local development and evaluation. Guest access creates/reuses a local consumer session and does
@@ -95,8 +122,8 @@ npm install
 npm run dev
 ```
 
-For a non-Docker backend, set `DATABASE_URL` in `.env` to your PostgreSQL connection string. The
-frontend reads `VITE_API_BASE_URL` and defaults to `http://localhost:8000`.
+For a non-Docker backend, set `DATABASE_URL` in `.env` to your PostgreSQL connection string.
+For Vercel deployment, leave `VITE_API_BASE_URL` unset so the frontend calls the same-origin API.
 
 ## Configuration
 
@@ -111,8 +138,8 @@ Copy `.env.example` to `.env` and keep `.env` out of version control.
 | `LOCAL_JWT_SECRET` | development value | Change this outside local demos |
 | `VITE_API_BASE_URL` | `http://localhost:8000` | API URL used by the frontend |
 
-Supabase settings and the production migration are documented in
-[`docs/Antigravity_Build_Package.md`](docs/Antigravity_Build_Package.md).
+For Supabase, use the production-only template [`.env.supabase.example`](.env.supabase.example).
+It contains the required database, Auth, Storage, and Groq variables without secrets.
 
 ## Testing and build checks
 
@@ -146,14 +173,12 @@ docs/          Requirements, architecture, build plan, and production-readiness 
 
 ## Scope and limitations
 
-This repository is a working challenge/demo implementation, not a production lending system. Local
-mode and mocked AI are the verified, reproducible path. Live Groq and Supabase integrations are
-extension points that require external credentials and deployment-specific security review.
+This repository is a working challenge/demo implementation, not a production lending system. It
+uses Supabase Auth and Postgres, private Supabase Storage for source-file lineage, and a
+human-controlled Groq workflow. Review decisions remain explicit; AI does not silently edit data.
 
-The current UI focuses on the ingestion → validation → exception → review → verification spine.
-Cross-file conflict visualization, a dedicated audit timeline page, and frontend batch summarization
-remain planned follow-up work; related backend/API foundations are present where noted in the planning
-documents.
+The current UI demonstrates ingestion → validation → searchable exception triage → AI assistance →
+human review → verification → audit/export. Synthetic data only is included.
 
 Synthetic data only is included. Do not upload real borrower or financial information to an
 unreviewed development deployment.

@@ -48,6 +48,13 @@ def create_access_token(user_id: uuid.UUID, role: str) -> str:
 
 def decode_token(token: str) -> dict:
     try:
+        if settings.database_mode == "supabase":
+            if not settings.supabase_jwt_secret:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="SUPABASE_JWT_SECRET must be configured for Supabase token verification",
+                )
+            return jwt.decode(token, settings.supabase_jwt_secret, algorithms=["HS256"], audience="authenticated")
         return jwt.decode(token, settings.local_jwt_secret, algorithms=["HS256"])
     except jwt.PyJWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))

@@ -23,6 +23,15 @@ export default function ConsumerDashboard() {
     enabled: !!selectedVerified,
   });
 
+  const auditTrail = useQuery({
+    queryKey: ["audit-trail", selectedVerified],
+    queryFn: () => {
+      const record = verified.data?.find(item => item.id === selectedVerified);
+      return api.auditTrail(record?.loan_record_id as string);
+    },
+    enabled: !!selectedVerified && !!verified.data?.some(item => item.id === selectedVerified),
+  });
+
   const q = summary.data?.data_quality_score ?? 0;
 
   return (
@@ -126,6 +135,17 @@ export default function ConsumerDashboard() {
               </div>
             </div>
           ) : null}
+
+          {selectedVerified && (
+            <div className="glass-card p-4">
+              <p className="text-xs font-semibold text-white mb-3">Audit timeline</p>
+              {auditTrail.isLoading ? <p className="text-xs text-muted">Loading record history...</p> : (
+                <ol className="space-y-3">{auditTrail.data?.length ? auditTrail.data.map(event => (
+                  <li key={event.id} className="flex gap-3 text-xs"><span className="mt-1 w-2 h-2 rounded-full bg-accent flex-shrink-0" /><div><p className="text-white/90">{event.event_type.split(".").join(" ")}</p><p className="text-muted mt-0.5">{new Date(event.created_at).toLocaleString()}</p></div></li>
+                )) : <li className="text-xs text-muted">No loan-level events were recorded yet.</li>}</ol>
+              )}
+            </div>
+          )}
 
           {/* Quality Overview */}
           <SectionHeader title="Quality Overview" />

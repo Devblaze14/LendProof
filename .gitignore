@@ -2,7 +2,12 @@
 .env
 .env.*
 !.env.example
+!.env.supabase.example
 keys.md
+.vercel/
+vercel-debug.log*
+*.pem
+*.key
 
 # Python
 __pycache__/

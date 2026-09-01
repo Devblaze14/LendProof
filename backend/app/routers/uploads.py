@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
@@ -14,6 +13,7 @@ from app.schemas import UploadBatchOut
 from app.security import require_role
 from app.services.audit import write_audit_event
 from app.services.ingestion import file_hash, process_upload
+from app.services.storage import store_upload
 
 router = APIRouter(prefix="/api/v1/uploads", tags=["uploads"])
 settings = get_settings()
@@ -49,14 +49,11 @@ def upload_file(
         raise AppError(409, "DUPLICATE_UPLOAD",
                         "This exact file has already been uploaded (idempotency check on file hash)")
 
-    storage_dir = Path(settings.local_storage_dir)
-    storage_dir.mkdir(parents=True, exist_ok=True)
-    storage_path = storage_dir / f"{h}_{file.filename}"
-    storage_path.write_bytes(content)
+    storage_path = store_upload(file.filename, h, content)
 
     batch = UploadBatch(
         filename=file.filename, file_hash=h, source_type=source_type,
-        storage_path=str(storage_path), uploaded_by=profile.id, status="processing",
+        storage_path=storage_path, uploaded_by=profile.id, status="processing",
     )
     db.add(batch)
     db.commit()
@@ -65,7 +62,11 @@ def upload_file(
     write_audit_event(db, event_type="file.uploaded", actor_id=profile.id,
                        detail={"batch_id": str(batch.id), "filename": file.filename})
 
-    if source_type == "loan_tape":
+    if source_type == "loan_tape" and settings.database_mode == "supabase":
+        # Serverless functions may stop after sending a response. Complete the
+        # demo-sized ingestion before returning so no batch is left stranded.
+        process_upload(db, batch.id, content)
+    elif source_type == "loan_tape":
         background_tasks.add_task(_run_ingestion_in_new_session, batch.id, content)
     else:
         batch.status = "complete"  # servicer_update/document_manifest ingestion

@@ -10,12 +10,15 @@ export default function ReviewerDashboard() {
   const location = useLocation();
   const view = location.pathname.endsWith("/queue") ? "queue" : location.pathname.endsWith("/insights") ? "insights" : "dashboard";
   const [statusFilter, setStatusFilter] = useState("open");
+  const [severityFilter, setSeverityFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string|null>(null);
+  const [comment, setComment] = useState("");
   const queryClient = useQueryClient();
 
   const exceptions = useQuery({
-    queryKey: ["exceptions", statusFilter],
-    queryFn: () => api.listExceptions({ status: statusFilter }),
+    queryKey: ["exceptions", statusFilter, severityFilter, search],
+    queryFn: () => api.listExceptions({ status: statusFilter, severity: severityFilter || undefined, q: search || undefined }),
   });
 
   const selected = exceptions.data?.find(e => e.id === selectedId) ?? null;
@@ -23,6 +26,18 @@ export default function ReviewerDashboard() {
   const aiReview = useQuery({
     queryKey: ["ai-review", selectedId],
     queryFn: () => api.requestAIReview(selectedId as string),
+    enabled: false,
+  });
+
+  const comments = useQuery({
+    queryKey: ["exception-comments", selectedId],
+    queryFn: () => api.listExceptionComments(selectedId as string),
+    enabled: !!selectedId,
+  });
+
+  const batchBriefing = useQuery({
+    queryKey: ["batch-briefing", statusFilter],
+    queryFn: () => api.summarizeBatch(statusFilter),
     enabled: false,
   });
 
@@ -36,6 +51,11 @@ export default function ReviewerDashboard() {
     },
   });
 
+  const addComment = useMutation({
+    mutationFn: () => api.addExceptionComment(selectedId as string, comment.trim()),
+    onSuccess: () => { setComment(""); queryClient.invalidateQueries({ queryKey: ["exception-comments", selectedId] }); },
+  });
+
   const statusTabs = [
     { key: "open", label: "Open", icon: "pending", count: null },
     { key: "in_review", label: "In Review", icon: "visibility", count: null },
@@ -47,6 +67,11 @@ export default function ReviewerDashboard() {
       {view === "insights" && <div className="grid grid-cols-2 gap-6 mb-8">
         <ChartCard title="Review confidence" eyebrow="AI-assisted decisions"><DonutChart value={87} label="confidence" /></ChartCard>
         <ChartCard title="Exceptions resolved" eyebrow="Weekly trend"><TrendChart values={[18, 25, 21, 36, 31, 44, 52]} color="#ffad2f" /></ChartCard>
+        <ChartCard title="AI triage briefing" eyebrow="Groq batch analysis" className="col-span-2">
+          <div className="space-y-3 text-sm text-subtle"><p>{batchBriefing.data?.summary || "Generate a concise review brief from the current exception queue. The model only recommends priorities; it never changes records."}</p>
+            {batchBriefing.data && <p className="text-xs text-accent-light">Focus: {batchBriefing.data.recommended_focus} · Highest severity: {batchBriefing.data.top_severity}</p>}
+            <button onClick={() => batchBriefing.refetch()} disabled={batchBriefing.isFetching} className="btn-primary text-xs py-2 px-3">{batchBriefing.isFetching ? "Analyzing queue..." : "Generate Groq briefing"}</button></div>
+        </ChartCard>
       </div>}
       {/* Status Tabs */}
       <div className="flex items-center gap-2 mb-6">
@@ -65,6 +90,11 @@ export default function ReviewerDashboard() {
         <span className="text-xs text-muted">
           {exceptions.data?.length ?? 0} exception{exceptions.data?.length !== 1 ? "s" : ""}
         </span>
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto] gap-3 mb-6">
+        <div className="relative"><Icon name="search" size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" /><input value={search} onChange={e => { setSearch(e.target.value); setSelectedId(null); }} className="input-glass pl-10 py-2.5" placeholder="Search by loan ID or borrower ID" /></div>
+        <select value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); setSelectedId(null); }} className="input-glass w-auto py-2.5"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
       </div>
 
       <div className="grid grid-cols-5 gap-6">
@@ -181,6 +211,12 @@ export default function ReviewerDashboard() {
                     )}
                   </div>
 
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-white">Reviewer notes</p>
+                    <div className="max-h-24 overflow-y-auto space-y-2">{comments.data?.map(note => <p key={note.id} className="rounded-lg bg-white/[0.03] p-2 text-xs text-subtle">{note.body}</p>)}</div>
+                    <div className="flex gap-2"><input value={comment} onChange={e => setComment(e.target.value)} className="input-glass py-2 text-xs" placeholder="Add a review note" /><button disabled={!comment.trim() || addComment.isPending} onClick={() => addComment.mutate()} className="btn-secondary px-3 py-2 text-xs">Add</button></div>
+                  </div>
+
                   {/* Decision Buttons */}
                   <div className="flex gap-3 pt-2">
                     <button onClick={() => decision.mutate({ action: "approve" })}
@@ -192,6 +228,7 @@ export default function ReviewerDashboard() {
                       <Icon name="close" size={16} /> Reject
                     </button>
                   </div>
+                  <button onClick={() => decision.mutate({ action: "request_correction" })} className="btn-secondary w-full text-xs">Request source correction</button>
                 </div>
               </div>
             )}

@@ -68,6 +68,17 @@ class ExceptionCommentIn(BaseModel):
     body: str
 
 
+class ExceptionCommentOut(BaseModel):
+    id: UUID
+    exception_id: UUID | None
+    author_id: UUID | None
+    body: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class ExceptionDecisionIn(BaseModel):
     action: str  # approve | reject | edit | request_correction
     field_changed: str | None = None

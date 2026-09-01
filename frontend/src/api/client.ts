@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+// Local development sets VITE_API_BASE_URL. On Vercel, same-origin rewrites
+// send /api/v1 requests to the FastAPI function without a separate API host.
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export type Role = "operator" | "reviewer" | "consumer";
 
@@ -64,7 +66,7 @@ export const api = {
     total_loans: number; open_exceptions: number; resolved_exceptions: number;
     verified_records: number; data_quality_score: number;
   }>("/api/v1/summary"),
-  listExceptions: (params: { status?: string; severity?: string } = {}) => {
+  listExceptions: (params: { status?: string; severity?: string; q?: string } = {}) => {
     const qs = new URLSearchParams(params as Record<string, string>).toString();
     return request<Array<{
       id: string; loan_record_id: string; rule_key: string; severity: string;
@@ -75,6 +77,16 @@ export const api = {
     request<{ id: string; model: string; response_json: Record<string, unknown>; confidence: number }>(
       `/api/v1/exceptions/${exceptionId}/ai-review`, { method: "POST" }
     ),
+  summarizeBatch: (status = "open") => request<{
+    summary: string; top_severity: string; recommended_focus: string;
+  }>(`/api/v1/ai/summarize-batch?status=${encodeURIComponent(status)}`, { method: "POST" }),
+  listExceptionComments: (exceptionId: string) => request<Array<{
+    id: string; exception_id: string; author_id: string | null; body: string; created_at: string;
+  }>>(`/api/v1/exceptions/${exceptionId}/comments`),
+  addExceptionComment: (exceptionId: string, body: string) =>
+    request<{ status: string }>(`/api/v1/exceptions/${exceptionId}/comments`, {
+      method: "POST", body: JSON.stringify({ body }),
+    }),
   submitDecision: (exceptionId: string, action: string, aiRecommendationId?: string) =>
     request<{ status: string }>(`/api/v1/exceptions/${exceptionId}/decision`, {
       method: "POST", body: JSON.stringify({ action, ai_recommendation_id: aiRecommendationId }),

@@ -4,6 +4,7 @@ import time
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -14,7 +15,7 @@ from app.models import (
     ReviewerAction, VerifiedLoanRecord,
 )
 from app.schemas import (
-    AIReviewOut, ExceptionCommentIn, ExceptionDecisionIn, ExceptionOut,
+    AIReviewOut, ExceptionCommentIn, ExceptionCommentOut, ExceptionDecisionIn, ExceptionOut,
 )
 from app.security import require_role
 from app.services import ai_service
@@ -26,7 +27,7 @@ router = APIRouter(prefix="/api/v1/exceptions", tags=["exceptions"])
 
 @router.get("", response_model=list[ExceptionOut])
 def list_exceptions(
-    status: str | None = None, severity: str | None = None,
+    status: str | None = None, severity: str | None = None, q: str | None = None,
     limit: int = 50, offset: int = 0,
     db: Session = Depends(get_db),
     profile: Profile = Depends(require_role("reviewer", "operator")),
@@ -36,6 +37,10 @@ def list_exceptions(
         query = query.filter(ExceptionRecord.status == status)
     if severity:
         query = query.filter(ExceptionRecord.severity == severity)
+    if q:
+        query = query.join(LoanRecord, ExceptionRecord.loan_record_id == LoanRecord.id).filter(or_(
+            LoanRecord.loan_id.ilike(f"%{q}%"), LoanRecord.borrower_id.ilike(f"%{q}%")
+        ))
     return query.order_by(ExceptionRecord.created_at.desc()).offset(offset).limit(limit).all()
 
 
@@ -60,6 +65,16 @@ def add_comment(exception_id: UUID, payload: ExceptionCommentIn, db: Session = D
     write_audit_event(db, event_type="reviewer.comment_added", actor_id=profile.id,
                        loan_record_id=exc.loan_record_id, detail={"exception_id": str(exception_id)})
     return {"status": "ok"}
+
+
+@router.get("/{exception_id}/comments", response_model=list[ExceptionCommentOut])
+def list_comments(exception_id: UUID, db: Session = Depends(get_db),
+                  profile: Profile = Depends(require_role("reviewer", "operator"))):
+    exc = db.get(ExceptionRecord, exception_id)
+    if not exc:
+        raise AppError(404, "NOT_FOUND", "Exception not found")
+    return (db.query(ExceptionComment).filter(ExceptionComment.exception_id == exception_id)
+            .order_by(ExceptionComment.created_at.asc()).all())
 
 
 @router.post("/{exception_id}/ai-review", response_model=AIReviewOut)
@@ -136,11 +151,23 @@ def submit_decision(exception_id: UUID, payload: ExceptionDecisionIn, db: Sessio
             actor_id=profile.id, loan_record_id=exc.loan_record_id,
             detail={"exception_id": str(exception_id)},
         )
+    elif payload.action == "request_correction":
+        exc.status = "in_review"
+        write_audit_event(
+            db, event_type="loan.correction_requested", actor_id=profile.id,
+            loan_record_id=exc.loan_record_id,
+            detail={"exception_id": str(exception_id), "field": exc.field},
+        )
 
     db.commit()
 
     if payload.action == "approve" and exc.loan_record_id:
-        _create_verified_record(db, exc.loan_record_id, profile.id, payload.ai_recommendation_id)
+        remaining_open = db.query(ExceptionRecord).filter(
+            ExceptionRecord.loan_record_id == exc.loan_record_id,
+            ExceptionRecord.status.in_(("open", "in_review")),
+        ).count()
+        if remaining_open == 0:
+            _create_verified_record(db, exc.loan_record_id, profile.id, payload.ai_recommendation_id)
 
     return {"status": "ok"}
 
