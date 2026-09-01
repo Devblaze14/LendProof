@@ -33,8 +33,9 @@ Built for the Intain Campus FinTech Challenge 2026 - Full Stack Track.
 
 ## Production Deployment
 
-LendProof deploys as a Vite frontend plus a FastAPI Vercel Function. Supabase
-provides Auth, Postgres, and private storage for source-file lineage.
+LendProof deploys as Vercel Services: a Vite frontend and a FastAPI backend
+sharing one domain. Supabase provides Auth, Postgres, and private storage for
+source-file lineage.
 
 1. In the Supabase SQL Editor, run these migrations in order:
 
@@ -50,8 +51,9 @@ The profile trigger assigns their in-app role.
 3. In Vercel, import this repository from its root directory. Add every value
 from [`.env.supabase.example`](.env.supabase.example) to both Production and
 Preview environments. Do not set `VITE_API_BASE_URL` in Vercel.
-4. Deploy. [`vercel.json`](vercel.json) builds the frontend and routes
-`/api/v1/*` requests to FastAPI in the same deployment.
+4. Set the Vercel Application Preset to **Services**, then deploy.
+[`vercel.json`](vercel.json) routes `/api/v1/*` to FastAPI and all other
+paths to the Vite frontend.
 
 Never commit a populated `.env` file or expose `SUPABASE_SERVICE_ROLE_KEY`
 through a `VITE_` variable. Full setup details are in

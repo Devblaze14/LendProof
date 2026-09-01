@@ -41,10 +41,10 @@ retaining the same backend and frontend containers.
 
 ## Vercel environment variables
 
-Add the variables from `.env.supabase.example` to the Vercel project for
-Production and Preview. Do not set `VITE_API_BASE_URL`; the frontend uses the
-same deployment's `/api/v1` rewrite. Do not add `SUPABASE_SERVICE_ROLE_KEY`
-as a `VITE_` variable.
+Set the Vercel Application Preset to **Services**, then add the variables from
+`.env.supabase.example` for Production and Preview. Do not set
+`VITE_API_BASE_URL`; the frontend uses the same deployment's `/api/v1` service
+rewrite. Do not add `SUPABASE_SERVICE_ROLE_KEY` as a `VITE_` variable.
 
 The local-only variables `LOCAL_JWT_SECRET`, `LOCAL_STORAGE_DIR`,
 `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` are not needed for this
