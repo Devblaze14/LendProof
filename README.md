@@ -55,6 +55,10 @@ Preview environments. Do not set `VITE_API_BASE_URL` in Vercel.
 [`vercel.json`](vercel.json) routes `/api/v1/*` to FastAPI and all other
 paths to the Vite frontend.
 
+The root `requirements.txt` intentionally lists runtime dependencies directly.
+Vercel's Services builder parses this file before building the FastAPI service,
+so it must not use a nested `-r backend/requirements.txt` include.
+
 Never commit a populated `.env` file or expose `SUPABASE_SERVICE_ROLE_KEY`
 through a `VITE_` variable. Full setup details are in
 [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md).
