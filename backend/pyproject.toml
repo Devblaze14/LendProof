@@ -1,3 +1,19 @@
+[project]
+name = "lendproof-api"
+version = "0.1.0"
+description = "LendProof FastAPI backend"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.115.0",
+  "uvicorn[standard]==0.30.6",
+  "sqlalchemy==2.0.35",
+  "psycopg2-binary==2.9.9",
+  "pydantic[email]==2.9.2",
+  "python-multipart==0.0.9",
+  "pyjwt==2.9.0",
+  "httpx==0.27.2",
+]
+
 [tool.black]
 line-length = 100
 
