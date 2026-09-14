@@ -8,7 +8,7 @@ Seeded automatically by `backend/app/seed/seed_db.py`.
 | Reviewer | reviewer@testmail.dev | DemoPass123! |
 | Consumer | consumer@testmail.dev | DemoPass123! |
 
-These are local-mode credentials only (see `app/security.py`). If you switch
-`DATABASE_MODE=supabase`, create these three users in Supabase Auth instead
-(Antigravity Build Package Task 1 does this via the Supabase Admin API using
-your service-role key) and this file's passwords no longer apply.
+These are application-managed credentials in both local and Supabase database
+modes. For an online deployment, run
+`backend/migrations/004_demo_app_users.sql` in the Supabase SQL editor. The
+login flow does not use Supabase Auth.

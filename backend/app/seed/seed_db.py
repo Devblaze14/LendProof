@@ -15,6 +15,7 @@ from uuid import uuid4
 from datetime import datetime
 
 from app.db import SessionLocal
+from app.config import get_settings
 from app.models import (
     AppUser, Profile, ValidationRule, UploadBatch, RawLoanRow, LoanRecord, ExceptionRecord
 )
@@ -22,7 +23,7 @@ from app.security import hash_password
 
 DATA_DIR = Path(__file__).resolve().parents[2].parent / "data"
 
-DEMO_PASSWORD = "DemoPass123!"
+DEMO_PASSWORD = get_settings().demo_password
 
 USERS = [
     {"email": "operator@testmail.dev", "role": "operator", "name": "Dana Operator"},

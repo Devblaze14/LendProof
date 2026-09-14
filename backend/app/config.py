@@ -1,14 +1,14 @@
 """
 Central configuration. Two supported modes, switched by DATABASE_MODE:
 
-  local    -> connects to a plain Postgres instance via DATABASE_URL, uses
-              app/auth_local.py for auth (own JWT issuance). This is what
+    local    -> connects to a plain Postgres instance via DATABASE_URL and uses
+                            application-managed demo credentials and JWTs. This is what
               this repo ships tested and runnable against, with zero
               external accounts required.
 
-  supabase -> connects to your Supabase Postgres via DATABASE_URL (the
-              Supabase connection string), verifies tokens issued by
-              Supabase Auth instead of minting its own, and expects
+    supabase -> connects to your Supabase Postgres via DATABASE_URL (the
+                            Supabase connection string), uses the same application-managed
+                            demo credentials and JWTs, and expects
               SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY
               to be set. This is the production path — see
               docs/Antigravity_Build_Package.md Section 0.
@@ -39,6 +39,7 @@ class Settings:
     groq_model_fast: str = os.getenv("GROQ_MODEL_FAST", "openai/gpt-oss-20b")
 
     local_jwt_secret: str = os.getenv("LOCAL_JWT_SECRET", "dev-only-change-me")
+    demo_password: str = os.getenv("DEMO_PASSWORD", "DemoPass123!")
     local_storage_dir: str = os.getenv("LOCAL_STORAGE_DIR", "./storage")
 
     ai_rate_limit_per_minute: int = int(os.getenv("AI_RATE_LIMIT_PER_MINUTE", "20"))

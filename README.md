@@ -43,11 +43,12 @@ source-file lineage.
 backend/migrations/001_init_supabase.sql
 backend/migrations/002_supabase_profiles.sql
 backend/migrations/003_supabase_storage.sql
+backend/migrations/004_demo_app_users.sql
 ```
 
-2. Create Operator, Reviewer, and Consumer users in Supabase Auth. Give each
-user raw metadata such as `{"role":"reviewer","name":"Reviewer Demo"}`.
-The profile trigger assigns their in-app role.
+2. Run `backend/migrations/004_demo_app_users.sql` in Supabase. It creates the
+fixed Operator, Reviewer, and Consumer accounts, all using `DemoPass123!`.
+Login is handled by the application database and does not use Supabase Auth.
 3. In Vercel, import this repository from its root directory. Add every value
 from [`.env.supabase.example`](.env.supabase.example) to both Production and
 Preview environments. Do not set `VITE_API_BASE_URL` in Vercel.
@@ -145,7 +146,7 @@ Copy `.env.example` to `.env` and keep `.env` out of version control.
 | `VITE_API_BASE_URL` | `http://localhost:8000` | API URL used by the frontend |
 
 For Supabase, use the production-only template [`.env.supabase.example`](.env.supabase.example).
-It contains the required database, Auth, Storage, and Groq variables without secrets.
+It contains the required database, application auth, Storage, and Groq variables without secrets.
 
 ## Testing and build checks
 

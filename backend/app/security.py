@@ -2,12 +2,9 @@
 Auth for DATABASE_MODE=local: this backend issues and verifies its own JWTs
 so the whole app is runnable and testable without a Supabase project.
 
-For DATABASE_MODE=supabase, replace `create_access_token`/`decode_token`
-with Supabase JWT/JWKS verification (see docs/Antigravity_Build_Package.md,
-Task 1: "detect whether the Supabase project uses a JWT secret or JWKS").
-The `get_current_profile` dependency and the role-check helpers below don't
-need to change either way — they operate on the decoded claims, not on how
-the token was issued.
+Online deployments use the same application-managed JWT path as local mode.
+Supabase provides the durable Postgres database and Storage, but Supabase Auth
+is not used for LendProof demo login.
 """
 from __future__ import annotations
 
@@ -16,7 +13,6 @@ import hmac
 import time
 import uuid
 
-import httpx
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -32,8 +28,8 @@ bearer_scheme = HTTPBearer()
 
 def hash_password(password: str) -> str:
     salt = "loan-copilot-static-dev-salt"  # fine for a local dev/demo backend;
-    # a real deployment on Supabase Auth doesn't need this at all — Supabase
-    # owns password hashing entirely.
+    # The same deterministic hash is used by the fixed demo accounts in both
+    # local and online database modes.
     return hmac.new(salt.encode(), password.encode(), hashlib.sha256).hexdigest()
 
 
@@ -49,24 +45,6 @@ def create_access_token(user_id: uuid.UUID, role: str) -> str:
 
 def decode_token(token: str) -> dict:
     try:
-        if settings.database_mode == "supabase":
-            if not settings.supabase_url or not settings.supabase_anon_key:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="SUPABASE_URL and SUPABASE_ANON_KEY must be configured for Supabase token verification",
-                )
-            response = httpx.get(
-                f"{settings.supabase_url.rstrip('/')}/auth/v1/user",
-                headers={
-                    "apikey": settings.supabase_anon_key,
-                    "Authorization": f"Bearer {token}",
-                },
-                timeout=10.0,
-            )
-            if response.status_code >= 400:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Supabase session")
-            user = response.json()
-            return {"sub": user["id"], "email": user.get("email")}
         return jwt.decode(token, settings.local_jwt_secret, algorithms=["HS256"])
     except jwt.PyJWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))

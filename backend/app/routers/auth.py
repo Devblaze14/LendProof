@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends
-import httpx
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -21,40 +20,17 @@ GUEST_PASSWORD = "guest-session-only"
 settings = get_settings()
 
 
-def _supabase_password_login(email: str, password: str, db: Session) -> LoginResponse:
-    """Exchange credentials with Supabase Auth; the browser never receives a service key."""
-    if not settings.supabase_url or not settings.supabase_anon_key:
-        raise AppError(500, "SUPABASE_CONFIG_MISSING", "SUPABASE_URL and SUPABASE_ANON_KEY are required")
-    auth_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/token?grant_type=password"
-    try:
-        with httpx.Client(trust_env=False, timeout=httpx.Timeout(10.0, connect=5.0)) as client:
-            for attempt in range(2):
-                try:
-                    response = client.post(
-                        auth_url,
-                        headers={"apikey": settings.supabase_anon_key, "Content-Type": "application/json"},
-                        json={"email": email, "password": password},
-                    )
-                    break
-                except (httpx.ConnectError, httpx.TimeoutException):
-                    if attempt == 1:
-                        raise
-    except (httpx.ConnectError, httpx.TimeoutException) as exc:
-        raise AppError(
-            503,
-            "SUPABASE_AUTH_UNAVAILABLE",
-            "Supabase Auth is temporarily unavailable. Please try again.",
-        ) from exc
-    if response.status_code >= 400:
+def _database_password_login(email: str, password: str, db: Session) -> LoginResponse:
+    """Authenticate the fixed demo accounts from the durable application database."""
+    user = db.query(AppUser).filter(AppUser.email == email).first()
+    if not user or not verify_password(password, user.password_hash):
         raise AppError(401, "INVALID_CREDENTIALS", "Incorrect email or password")
-    payload = response.json()
-    claims = decode_token(payload["access_token"])
-    profile = db.get(Profile, uuid.UUID(claims["sub"]))
+    profile = db.get(Profile, user.id)
     if profile is None:
         raise AppError(403, "PROFILE_MISSING", "This Supabase user has no LendProof role profile")
+    token = create_access_token(user.id, profile.role)
     return LoginResponse(
-        access_token=payload["access_token"], role=profile.role,
-        name=profile.name or claims.get("email"),
+        access_token=token, role=profile.role, name=profile.name,
     )
 
 
@@ -83,7 +59,7 @@ def guest_login(db: Session = Depends(get_db)):
 @router.post("/signup", response_model=LoginResponse, status_code=201)
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     if settings.database_mode == "supabase":
-        raise AppError(400, "USE_SUPABASE_AUTH", "Create users through Supabase Auth or the Supabase dashboard")
+        raise AppError(400, "DEMO_ACCOUNTS_ONLY", "Only the three configured demo accounts are available")
     if payload.role not in ("operator", "reviewer", "consumer"):
         raise AppError(400, "INVALID_ROLE", "role must be operator, reviewer, or consumer", "role")
     if db.query(AppUser).filter(AppUser.email == payload.email).first():
@@ -100,11 +76,4 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=LoginResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    if settings.database_mode == "supabase":
-        return _supabase_password_login(payload.email, payload.password, db)
-    user = db.query(AppUser).filter(AppUser.email == payload.email).first()
-    if not user or not verify_password(payload.password, user.password_hash):
-        raise AppError(401, "INVALID_CREDENTIALS", "Incorrect email or password")
-    profile = db.get(Profile, user.id)
-    token = create_access_token(user.id, profile.role)
-    return LoginResponse(access_token=token, role=profile.role, name=profile.name)
+    return _database_password_login(payload.email, payload.password, db)

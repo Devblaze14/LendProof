@@ -7,13 +7,12 @@ and Auth, but never place the service-role key in frontend variables.
 
 1. Run `backend/migrations/001_init_supabase.sql` in the Supabase SQL editor.
 2. Run `backend/migrations/002_supabase_profiles.sql` in the same editor.
-   If it was already run before the storage bucket was added, also run
-   `backend/migrations/003_supabase_storage.sql`.
-3. In Supabase Auth, create the Operator, Reviewer, and Consumer demo users.
-   Put `role` (`operator`, `reviewer`, or `consumer`) and optional `name` in
-   each user's raw metadata when creating the user. The trigger creates the
-   matching application profile automatically.
-4. Copy the values below into `.env`:
+3. Run `backend/migrations/003_supabase_storage.sql` if the storage bucket is
+   not already present.
+4. Run `backend/migrations/004_demo_app_users.sql`. This creates the fixed
+   Operator, Reviewer, and Consumer accounts in the application database.
+   Login uses `DemoPass123!` for all three and does not contact Supabase Auth.
+5. Copy the values below into `.env`:
 
 ```dotenv
 DATABASE_MODE=supabase
@@ -25,10 +24,9 @@ GROQ_MOCK=false
 GROQ_API_KEY=your_groq_key
 ```
 
-The backend validates Supabase access tokens through Supabase Auth's
-`/auth/v1/user` endpoint, so it works with both legacy HS256 projects and
-projects using Supabase's newer signing keys. Do not put
-`SUPABASE_SERVICE_ROLE_KEY` in a `VITE_` variable or commit `.env`.
+The backend issues and validates its own short-lived application JWTs using
+`LOCAL_JWT_SECRET`. Supabase is used for durable Postgres data and Storage.
+Do not put `SUPABASE_SERVICE_ROLE_KEY` in a `VITE_` variable or commit `.env`.
 
 ## Start with Supabase
 

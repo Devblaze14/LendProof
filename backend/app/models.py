@@ -17,8 +17,7 @@ def uuid_col():
 
 
 class AppUser(Base):
-    """Local-mode-only stand-in for Supabase's auth.users. Not created / not
-    used when DATABASE_MODE=supabase — Supabase Auth owns this table there."""
+    """Application-managed demo identity used in both database modes."""
     __tablename__ = "app_users"
     id = uuid_col()
     email = Column(String, unique=True, nullable=False)
