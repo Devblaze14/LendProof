@@ -52,7 +52,10 @@ def store_upload(filename: str, content_hash: str, content: bytes) -> str:
     try:
         response = httpx.post(
             f"{storage_url}/storage/v1/object/{BUCKET}/{object_path}",
-            headers={**headers, "x-upsert": "false", "Content-Type": "text/csv"},
+            # The database hash check is the application-level idempotency
+            # guard. Upsert also lets a retry recover if Storage succeeded
+            # before the database transaction was committed.
+            headers={**headers, "x-upsert": "true", "Content-Type": "text/csv"},
             content=content,
             timeout=20.0,
         )
