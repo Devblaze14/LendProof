@@ -104,10 +104,12 @@ def reset_uploaded_data(
     if exception_ids:
         db.query(ReviewerAction).filter(ReviewerAction.exception_id.in_(exception_ids)).delete(synchronize_session=False)
         db.query(ExceptionComment).filter(ExceptionComment.exception_id.in_(exception_ids)).delete(synchronize_session=False)
-        db.query(VerifiedLoanRecord).filter(VerifiedLoanRecord.loan_record_id.in_(loan_ids)).delete(synchronize_session=False)
         db.query(AIRecommendation).filter(AIRecommendation.exception_id.in_(exception_ids)).delete(synchronize_session=False)
         db.query(ExceptionRecord).filter(ExceptionRecord.id.in_(exception_ids)).delete(synchronize_session=False)
     if loan_ids:
+        # Verified records reference loan_records directly, including clean
+        # loans that never created an exception.
+        db.query(VerifiedLoanRecord).filter(VerifiedLoanRecord.loan_record_id.in_(loan_ids)).delete(synchronize_session=False)
         db.query(AuditLog).filter(AuditLog.loan_record_id.in_(loan_ids)).delete(synchronize_session=False)
         db.query(LoanRecord).filter(LoanRecord.id.in_(loan_ids)).delete(synchronize_session=False)
     if batch_ids:
