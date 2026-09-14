@@ -15,6 +15,7 @@ export default function ReviewerDashboard() {
   const [selectedId, setSelectedId] = useState<string|null>(null);
   const [comment, setComment] = useState("");
   const queryClient = useQueryClient();
+  const loans = useQuery({ queryKey: ["loans", search], queryFn: () => api.listLoans({ q: search || undefined }) });
 
   const exceptions = useQuery({
     queryKey: ["exceptions", statusFilter, severityFilter, search],
@@ -125,7 +126,24 @@ export default function ReviewerDashboard() {
             )}
 
             {!exceptions.isError && exceptions.data?.length === 0 && (
-              <div className="p-8"><EmptyState message={`No ${statusFilter.replace("_"," ")} exceptions`} icon="task_alt" /></div>
+              <div className="p-8">
+                <EmptyState message={`No ${statusFilter.replace("_"," ")} exceptions`} icon="task_alt" />
+                {statusFilter === "open" && (
+                  <div className="mt-6 border-t border-white/[0.05] pt-5">
+                    <p className="text-xs text-subtle mb-3">Uploaded loans are stored, but only loans with validation findings appear in this queue.</p>
+                    {loans.isLoading ? <p className="text-xs text-muted">Loading uploaded loans...</p> : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {loans.data?.slice(0, 20).map(loan => (
+                          <div key={loan.id} className="flex items-center justify-between rounded-lg bg-white/[0.03] px-3 py-2 text-xs">
+                            <span className="font-mono text-white/80">{loan.loan_id}</span>
+                            <span className="text-muted">{loan.borrower_id || "No borrower ID"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
 
             {!exceptions.isError && <ul className="divide-y divide-white/[0.03] max-h-[600px] overflow-y-auto">

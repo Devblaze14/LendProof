@@ -76,6 +76,15 @@ export const api = {
     total_loans: number; open_exceptions: number; resolved_exceptions: number;
     verified_records: number; data_quality_score: number;
   }>("/api/v1/summary"),
+  listLoans: (params: { q?: string } = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter((entry): entry is [string, string] => entry[1] !== undefined)
+    ).toString();
+    return request<Array<{
+      id: string; loan_id: string; borrower_id: string | null; payment_status: string | null;
+      current_balance: number | null; original_principal: number | null; document_status: string | null;
+    }>>(`/api/v1/loans${qs ? `?${qs}` : ""}`);
+  },
   listExceptions: (params: { status?: string; severity?: string; q?: string } = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter((entry): entry is [string, string] => entry[1] !== undefined)
