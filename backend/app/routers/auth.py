@@ -25,11 +25,26 @@ def _supabase_password_login(email: str, password: str, db: Session) -> LoginRes
     """Exchange credentials with Supabase Auth; the browser never receives a service key."""
     if not settings.supabase_url or not settings.supabase_anon_key:
         raise AppError(500, "SUPABASE_CONFIG_MISSING", "SUPABASE_URL and SUPABASE_ANON_KEY are required")
-    response = httpx.post(
-        f"{settings.supabase_url.rstrip('/')}/auth/v1/token?grant_type=password",
-        headers={"apikey": settings.supabase_anon_key, "Content-Type": "application/json"},
-        json={"email": email, "password": password}, timeout=10.0,
-    )
+    auth_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/token?grant_type=password"
+    try:
+        with httpx.Client(trust_env=False, timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            for attempt in range(2):
+                try:
+                    response = client.post(
+                        auth_url,
+                        headers={"apikey": settings.supabase_anon_key, "Content-Type": "application/json"},
+                        json={"email": email, "password": password},
+                    )
+                    break
+                except (httpx.ConnectError, httpx.TimeoutException):
+                    if attempt == 1:
+                        raise
+    except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        raise AppError(
+            503,
+            "SUPABASE_AUTH_UNAVAILABLE",
+            "Supabase Auth is temporarily unavailable. Please try again.",
+        ) from exc
     if response.status_code >= 400:
         raise AppError(401, "INVALID_CREDENTIALS", "Incorrect email or password")
     payload = response.json()
