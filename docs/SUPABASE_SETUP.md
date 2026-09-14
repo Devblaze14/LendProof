@@ -21,14 +21,14 @@ DATABASE_URL=postgresql+psycopg2://postgres.PROJECT_REF:DB_PASSWORD@aws-0-REGION
 SUPABASE_URL=https://PROJECT_REF.supabase.co
 SUPABASE_ANON_KEY=your_publishable_or_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-SUPABASE_JWT_SECRET=your_legacy_hs256_jwt_secret
 GROQ_MOCK=false
 GROQ_API_KEY=your_groq_key
 ```
 
-`SUPABASE_JWT_SECRET` is used by this backend to verify Supabase access
-tokens. Select the legacy HS256 JWT secret in the Supabase API/JWT settings.
-Do not put `SUPABASE_SERVICE_ROLE_KEY` in a `VITE_` variable or commit `.env`.
+The backend validates Supabase access tokens through Supabase Auth's
+`/auth/v1/user` endpoint, so it works with both legacy HS256 projects and
+projects using Supabase's newer signing keys. Do not put
+`SUPABASE_SERVICE_ROLE_KEY` in a `VITE_` variable or commit `.env`.
 
 ## Start with Supabase
 

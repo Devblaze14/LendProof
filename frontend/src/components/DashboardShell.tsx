@@ -67,7 +67,7 @@ function Sidebar({ role }: { role: Role }) {
                 }`}
             >
               <Icon name={item.icon} size={20} className={isActive ? "text-accent-light" : ""} />
-              {item.label}
+              <span className="ml-1">{item.label}</span>
             </button>
           );
         })}
@@ -91,7 +91,7 @@ function Sidebar({ role }: { role: Role }) {
           className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium text-subtle hover:text-white hover:bg-white/[0.04] transition-all"
         >
           <Icon name="logout" size={16} />
-          Sign out
+          <span className="ml-1">Sign out</span>
         </button>
       </div>
     </aside>

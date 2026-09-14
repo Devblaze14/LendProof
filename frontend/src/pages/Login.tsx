@@ -88,7 +88,7 @@ export default function Login() {
           <div className="role-tabs" aria-label="Choose workspace">
             {DEMO_ACCOUNTS.map((account) => (
               <button key={account.label} type="button" onClick={() => selectDemo(account)} className={selectedRole === account.label.toLowerCase() ? "role-tab active" : "role-tab"}>
-                <Icon name={account.icon} size={16} /> {account.label}
+                <Icon name={account.icon} size={16} /> <span className="ml-1">{account.label}</span>
               </button>
             ))}
           </div>

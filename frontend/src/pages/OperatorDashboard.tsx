@@ -17,7 +17,11 @@ export default function OperatorDashboard() {
   const uploadMutation = useMutation({
     mutationFn: (file: File) => api.uploadFile(file, sourceType),
     onSuccess: (res) => {
-      setMessage({ text: `Batch ${res.id.slice(0,8)}… accepted. ${res.row_count||""} rows.`, type: "success" });
+      if (res.status === "complete" || res.row_count) {
+        setMessage({ text: `Batch ${res.id.slice(0,8)}… processed. ${res.row_count||""} rows.`, type: "success" });
+      } else {
+        setMessage({ text: `Batch ${res.id.slice(0,8)}… accepted. Processing in background.`, type: "success" });
+      }
       setTimeout(() => queryClient.invalidateQueries({ queryKey: ["summary"] }), 4000);
     },
     onError: (err) => setMessage({ text: err instanceof ApiError ? err.message : "Upload failed.", type: "error" }),

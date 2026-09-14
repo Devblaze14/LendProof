@@ -49,7 +49,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(body as ApiErrorShape);
+  if (!res.ok) {
+    if (res.status === 401 && session) {
+      clearSession();
+      window.location.assign("/login");
+    }
+    throw new ApiError(body as ApiErrorShape);
+  }
   return body as T;
 }
 
@@ -67,7 +73,9 @@ export const api = {
     verified_records: number; data_quality_score: number;
   }>("/api/v1/summary"),
   listExceptions: (params: { status?: string; severity?: string; q?: string } = {}) => {
-    const qs = new URLSearchParams(params as Record<string, string>).toString();
+    const qs = new URLSearchParams(
+      Object.entries(params).filter((entry): entry is [string, string] => entry[1] !== undefined)
+    ).toString();
     return request<Array<{
       id: string; loan_record_id: string; rule_key: string; severity: string;
       status: string; field: string | null; detail: { message?: string }; created_at: string;

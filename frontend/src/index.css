@@ -99,7 +99,7 @@ body {
 .donut-chart strong { color:#f7f8f4; font-size:28px; letter-spacing:-.06em; }
 .donut-chart span { color:#89918a; font-size:11px; }
 .role-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:5px; margin-bottom:22px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:14px; }
-.role-tab { display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 6px; border:0; border-radius:10px; background:transparent; color:#87918a; font-size:11px; font-weight:700; cursor:pointer; transition:all .2s ease; }
+.role-tab { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 6px; border:0; border-radius:10px; background:transparent; color:#87918a; font-size:11px; font-weight:700; cursor:pointer; transition:all .2s ease; white-space: nowrap; }
 .role-tab:hover { color:#f5f7f4; background:rgba(255,255,255,.05); }
 .role-tab.active { color:#111; background:#b8ff5a; box-shadow:0 0 20px rgba(184,255,90,.18); }
 @media (max-width: 720px) { .chart-card { min-height:200px; } .role-tabs { grid-template-columns:1fr; } }

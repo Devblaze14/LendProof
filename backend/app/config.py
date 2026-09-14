@@ -9,7 +9,7 @@ Central configuration. Two supported modes, switched by DATABASE_MODE:
   supabase -> connects to your Supabase Postgres via DATABASE_URL (the
               Supabase connection string), verifies tokens issued by
               Supabase Auth instead of minting its own, and expects
-              SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_JWT_SECRET
+              SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY
               to be set. This is the production path — see
               docs/Antigravity_Build_Package.md Section 0.
 
@@ -32,7 +32,6 @@ class Settings:
     supabase_url: str | None = os.getenv("SUPABASE_URL")
     supabase_service_role_key: str | None = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     supabase_anon_key: str | None = os.getenv("SUPABASE_ANON_KEY")
-    supabase_jwt_secret: str | None = os.getenv("SUPABASE_JWT_SECRET")
 
     groq_mock: bool = os.getenv("GROQ_MOCK", "true").lower() == "true"
     groq_api_key: str | None = os.getenv("GROQ_API_KEY")

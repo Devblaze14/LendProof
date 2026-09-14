@@ -46,8 +46,9 @@ def upload_file(
 
     existing = db.query(UploadBatch).filter(UploadBatch.file_hash == h).first()
     if existing:
-        raise AppError(409, "DUPLICATE_UPLOAD",
-                        "This exact file has already been uploaded (idempotency check on file hash)")
+        # Return existing batch instead of error for better demo experience
+        # The file was already processed, so return the existing batch info
+        return existing
 
     storage_path = store_upload(file.filename, h, content)
 

@@ -19,6 +19,7 @@ export default function ReviewerDashboard() {
   const exceptions = useQuery({
     queryKey: ["exceptions", statusFilter, severityFilter, search],
     queryFn: () => api.listExceptions({ status: statusFilter, severity: severityFilter || undefined, q: search || undefined }),
+    retry: 1,
   });
 
   const selected = exceptions.data?.find(e => e.id === selectedId) ?? null;
@@ -115,11 +116,19 @@ export default function ReviewerDashboard() {
               </div>
             )}
 
-            {exceptions.data?.length === 0 && (
+            {exceptions.isError && (
+              <div className="p-8 text-center">
+                <p className="text-sm text-rose-300">Could not load the exception queue.</p>
+                <p className="text-xs text-muted mt-2">{exceptions.error instanceof Error ? exceptions.error.message : "Please try again."}</p>
+                <button onClick={() => exceptions.refetch()} className="btn-primary text-xs py-2 px-3 mt-4">Retry</button>
+              </div>
+            )}
+
+            {!exceptions.isError && exceptions.data?.length === 0 && (
               <div className="p-8"><EmptyState message={`No ${statusFilter.replace("_"," ")} exceptions`} icon="task_alt" /></div>
             )}
 
-            <ul className="divide-y divide-white/[0.03] max-h-[600px] overflow-y-auto">
+            {!exceptions.isError && <ul className="divide-y divide-white/[0.03] max-h-[600px] overflow-y-auto">
               {exceptions.data?.map((exc, i) => (
                 <li key={exc.id} onClick={() => setSelectedId(exc.id)}
                   className={`p-4 cursor-pointer transition-all duration-200 hover:bg-white/[0.02] ${
@@ -137,7 +146,7 @@ export default function ReviewerDashboard() {
                   </div>
                 </li>
               ))}
-            </ul>
+            </ul>}
           </div>
         </div>
 

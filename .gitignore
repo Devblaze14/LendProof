@@ -8,6 +8,9 @@ keys.md
 vercel-debug.log*
 *.pem
 *.key
+*.secret
+*.credentials
+secrets/
 
 # Python
 __pycache__/
@@ -43,6 +46,7 @@ pnpm-debug.log*
 
 # Application runtime data
 storage/
+intain stuff/
 *.sqlite
 *.sqlite3
 *.db

@@ -16,6 +16,7 @@ import hmac
 import time
 import uuid
 
+import httpx
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -49,12 +50,23 @@ def create_access_token(user_id: uuid.UUID, role: str) -> str:
 def decode_token(token: str) -> dict:
     try:
         if settings.database_mode == "supabase":
-            if not settings.supabase_jwt_secret:
+            if not settings.supabase_url or not settings.supabase_anon_key:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="SUPABASE_JWT_SECRET must be configured for Supabase token verification",
+                    detail="SUPABASE_URL and SUPABASE_ANON_KEY must be configured for Supabase token verification",
                 )
-            return jwt.decode(token, settings.supabase_jwt_secret, algorithms=["HS256"], audience="authenticated")
+            response = httpx.get(
+                f"{settings.supabase_url.rstrip('/')}/auth/v1/user",
+                headers={
+                    "apikey": settings.supabase_anon_key,
+                    "Authorization": f"Bearer {token}",
+                },
+                timeout=10.0,
+            )
+            if response.status_code >= 400:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Supabase session")
+            user = response.json()
+            return {"sub": user["id"], "email": user.get("email")}
         return jwt.decode(token, settings.local_jwt_secret, algorithms=["HS256"])
     except jwt.PyJWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
