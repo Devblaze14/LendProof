@@ -34,7 +34,6 @@ const NAV_ITEMS: Record<Role, Array<{ label: string; path: string; icon: string 
 function Sidebar({ role }: { role: Role }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [resetting, setResetting] = useState(false);
   const items = NAV_ITEMS[role] || [];
 
   return (
@@ -87,30 +86,6 @@ function Sidebar({ role }: { role: Role }) {
             </div>
           </div>
         </div>
-        {role === "operator" && (
-          <button
-            type="button"
-            aria-label="Reset uploaded demo data"
-            title="Reset uploaded demo data"
-            disabled={resetting}
-            onClick={async () => {
-              if (!window.confirm("Reset all uploaded CSV data for this demo? Accounts and validation rules will remain.")) return;
-              setResetting(true);
-              try {
-                await api.resetUploadedData();
-                window.location.reload();
-              } catch {
-                window.alert("Could not reset uploaded data. Please try again.");
-              } finally {
-                setResetting(false);
-              }
-            }}
-            className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-amber-300 hover:bg-amber-400/10 transition-all disabled:opacity-40 tooltip"
-            data-tooltip="Reset uploaded demo data"
-          >
-            <Icon name={resetting ? "sync" : "restart_alt"} size={17} />
-          </button>
-        )}
         <button
           onClick={() => { clearSession(); navigate("/"); }}
           className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium text-subtle hover:text-white hover:bg-white/[0.04] transition-all"
@@ -124,8 +99,10 @@ function Sidebar({ role }: { role: Role }) {
 }
 
 /* ─── Top Bar ─── */
-function TopBar({ title }: { title: string }) {
+function TopBar({ title, role }: { title: string; role: Role }) {
   const [time, setTime] = useState(new Date());
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -148,9 +125,47 @@ function TopBar({ title }: { title: string }) {
           </button>
           <span className="notification-dot" />
         </div>
-        <button className="w-9 h-9 rounded-xl glass flex items-center justify-center hover:bg-white/[0.06] transition-all tooltip" data-tooltip="Settings">
-          <Icon name="settings" size={18} className="text-subtle" />
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            aria-label="Settings"
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((open) => !open)}
+            className="w-9 h-9 rounded-xl glass flex items-center justify-center hover:bg-white/[0.06] transition-all tooltip"
+            data-tooltip="Settings"
+          >
+            <Icon name="settings" size={18} className="text-subtle" />
+          </button>
+          {settingsOpen && (
+            <div className="absolute right-0 top-12 z-50 w-56 glass-card p-2 shadow-xl">
+              {role === "operator" ? (
+                <button
+                  type="button"
+                  disabled={resetting}
+                  onClick={async () => {
+                    if (!window.confirm("Reset all uploaded CSV data for this demo? Accounts and validation rules will remain.")) return;
+                    setResetting(true);
+                    try {
+                      await api.resetUploadedData();
+                      window.location.reload();
+                    } catch {
+                      window.alert("Could not reset uploaded data. Please try again.");
+                    } finally {
+                      setResetting(false);
+                      setSettingsOpen(false);
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left text-xs text-subtle hover:bg-amber-400/10 hover:text-amber-300 transition-colors disabled:opacity-40"
+                >
+                  <Icon name={resetting ? "sync" : "restart_alt"} size={17} />
+                  <span>{resetting ? "Resetting data..." : "Reset uploaded data"}</span>
+                </button>
+              ) : (
+                <p className="px-3 py-2 text-xs text-muted">No settings available</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
@@ -165,7 +180,7 @@ export function DashboardShell({ title, children }: { title: string; children: R
     <div className="min-h-screen bg-mesh">
       <Sidebar role={role} />
       <div className="ml-0 lg:ml-[240px]">
-        <TopBar title={title} />
+        <TopBar title={title} role={role} />
         <main className="p-4 sm:p-6 lg:p-8 animate-fade-in-up">
           {children}
         </main>
