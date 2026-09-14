@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -22,7 +23,14 @@ settings = get_settings()
 
 def _database_password_login(email: str, password: str, db: Session) -> LoginResponse:
     """Authenticate the fixed demo accounts from the durable application database."""
-    user = db.query(AppUser).filter(AppUser.email == email).first()
+    try:
+        user = db.query(AppUser).filter(AppUser.email == email).first()
+    except OperationalError as exc:
+        raise AppError(
+            503,
+            "DEMO_ACCOUNTS_NOT_INITIALIZED",
+            "Run backend/migrations/004_demo_app_users.sql in Supabase before signing in.",
+        ) from exc
     if not user or not verify_password(password, user.password_hash):
         raise AppError(401, "INVALID_CREDENTIALS", "Incorrect email or password")
     profile = db.get(Profile, user.id)

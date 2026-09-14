@@ -28,16 +28,17 @@ export function clearSession() {
 }
 
 interface ApiErrorShape {
-  error: { code: string; message: string; field?: string | null; request_id?: string };
+  error?: { code: string; message: string; field?: string | null; request_id?: string };
+  detail?: string;
 }
 
 export class ApiError extends Error {
   code: string;
   field?: string | null;
   constructor(shape: ApiErrorShape) {
-    super(shape.error.message);
-    this.code = shape.error.code;
-    this.field = shape.error.field;
+    super(shape.error?.message ?? shape.detail ?? "The request could not be completed.");
+    this.code = shape.error?.code ?? "HTTP_ERROR";
+    this.field = shape.error?.field;
   }
 }
 
