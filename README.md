@@ -147,6 +147,8 @@ Copy `.env.example` to `.env` and keep `.env` out of version control.
 
 For Supabase, use the production-only template [`.env.supabase.example`](.env.supabase.example).
 It contains the required database, application auth, Storage, and Groq variables without secrets.
+For Vercel, use the Supabase pooler `DATABASE_URL` on port `6543` with
+`sslmode=require`, not the direct database host on port `5432`.
 
 ## Testing and build checks
 

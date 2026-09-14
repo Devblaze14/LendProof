@@ -44,6 +44,10 @@ Set the Vercel Application Preset to **Services**, then add the variables from
 `VITE_API_BASE_URL`; the frontend uses the same deployment's `/api/v1` service
 rewrite. Do not add `SUPABASE_SERVICE_ROLE_KEY` as a `VITE_` variable.
 
+For Vercel, `DATABASE_URL` must use the Supabase pooler hostname and port
+`6543` with `sslmode=require`. Do not use the direct `db.PROJECT_REF.supabase.co:5432`
+hostname for the serverless backend.
+
 The local-only variables `LOCAL_JWT_SECRET`, `LOCAL_STORAGE_DIR`,
 `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY` are not needed for this
 deployment. The names `secret_role`, `anon_public`, and `secret_key` are not
