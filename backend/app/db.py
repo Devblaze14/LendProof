@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import get_settings
 
 settings = get_settings()
-engine = create_engine(settings.database_url, pool_pre_ping=True, future=True)
+engine_options = {"pool_pre_ping": True, "future": True}
+if settings.database_mode == "supabase":
+    engine_options.update({"pool_size": 1, "max_overflow": 0, "pool_recycle": 300})
+engine = create_engine(settings.database_url, **engine_options)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 

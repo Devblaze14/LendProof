@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getSession, clearSession, Role } from "../api/client";
+import { api, getSession, clearSession, Role } from "../api/client";
 
 /* ─── Icon helper using Material Symbols ─── */
 export function Icon({ name, className = "", size = 20 }: { name: string; className?: string; size?: number }) {
@@ -34,6 +34,7 @@ const NAV_ITEMS: Record<Role, Array<{ label: string; path: string; icon: string 
 function Sidebar({ role }: { role: Role }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [resetting, setResetting] = useState(false);
   const items = NAV_ITEMS[role] || [];
 
   return (
@@ -86,6 +87,30 @@ function Sidebar({ role }: { role: Role }) {
             </div>
           </div>
         </div>
+        {role === "operator" && (
+          <button
+            type="button"
+            aria-label="Reset uploaded demo data"
+            title="Reset uploaded demo data"
+            disabled={resetting}
+            onClick={async () => {
+              if (!window.confirm("Reset all uploaded CSV data for this demo? Accounts and validation rules will remain.")) return;
+              setResetting(true);
+              try {
+                await api.resetUploadedData();
+                window.location.reload();
+              } catch {
+                window.alert("Could not reset uploaded data. Please try again.");
+              } finally {
+                setResetting(false);
+              }
+            }}
+            className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-amber-300 hover:bg-amber-400/10 transition-all disabled:opacity-40 tooltip"
+            data-tooltip="Reset uploaded demo data"
+          >
+            <Icon name={resetting ? "sync" : "restart_alt"} size={17} />
+          </button>
+        )}
         <button
           onClick={() => { clearSession(); navigate("/"); }}
           className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium text-subtle hover:text-white hover:bg-white/[0.04] transition-all"

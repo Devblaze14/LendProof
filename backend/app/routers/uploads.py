@@ -3,12 +3,16 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
+import httpx
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.db import SessionLocal, get_db
 from app.errors import AppError
-from app.models import Profile, UploadBatch
+from app.models import (
+    AIRecommendation, AuditLog, ExceptionComment, ExceptionRecord, LoanRecord,
+    Profile, RawLoanRow, ReviewerAction, UploadBatch, VerifiedLoanRecord,
+)
 from app.schemas import UploadBatchOut
 from app.security import require_role
 from app.services.audit import write_audit_event
@@ -74,6 +78,65 @@ def upload_file(
         db.commit()               # follows the same pattern; omitted here for scope
 
     return batch
+
+
+@router.delete("/reset", status_code=200)
+def reset_uploaded_data(
+    db: Session = Depends(get_db),
+    profile: Profile = Depends(require_role("operator")),
+):
+    """Clear demo-uploaded data while retaining accounts and validation rules."""
+    batches = db.query(UploadBatch).all()
+    batch_ids = [batch.id for batch in batches]
+    loan_ids = [
+        loan.id for loan in db.query(LoanRecord)
+        .filter(LoanRecord.source_batch_id.in_(batch_ids)).all()
+    ] if batch_ids else []
+    exception_ids = [
+        item.id for item in db.query(ExceptionRecord)
+        .filter(ExceptionRecord.loan_record_id.in_(loan_ids)).all()
+    ] if loan_ids else []
+
+    if exception_ids:
+        db.query(ReviewerAction).filter(ReviewerAction.exception_id.in_(exception_ids)).delete(synchronize_session=False)
+        db.query(ExceptionComment).filter(ExceptionComment.exception_id.in_(exception_ids)).delete(synchronize_session=False)
+        db.query(VerifiedLoanRecord).filter(VerifiedLoanRecord.loan_record_id.in_(loan_ids)).delete(synchronize_session=False)
+        db.query(AIRecommendation).filter(AIRecommendation.exception_id.in_(exception_ids)).delete(synchronize_session=False)
+        db.query(ExceptionRecord).filter(ExceptionRecord.id.in_(exception_ids)).delete(synchronize_session=False)
+    if loan_ids:
+        db.query(AuditLog).filter(AuditLog.loan_record_id.in_(loan_ids)).delete(synchronize_session=False)
+        db.query(LoanRecord).filter(LoanRecord.id.in_(loan_ids)).delete(synchronize_session=False)
+    if batch_ids:
+        db.query(RawLoanRow).filter(RawLoanRow.batch_id.in_(batch_ids)).delete(synchronize_session=False)
+        db.query(UploadBatch).filter(UploadBatch.id.in_(batch_ids)).delete(synchronize_session=False)
+
+    db.commit()
+    _remove_stored_uploads([batch.storage_path for batch in batches])
+    return {"status": "reset", "batches_removed": len(batches), "loans_removed": len(loan_ids)}
+
+
+def _remove_stored_uploads(paths: list[str]) -> None:
+    for path in paths:
+        if path.startswith("supabase://"):
+            object_path = path.removeprefix("supabase://loan-uploads/")
+            if settings.supabase_url and settings.supabase_service_role_key:
+                try:
+                    httpx.delete(
+                        f"{settings.supabase_url.rstrip('/')}/storage/v1/object/loan-uploads/{object_path}",
+                        headers={
+                            "apikey": settings.supabase_service_role_key,
+                            "Authorization": f"Bearer {settings.supabase_service_role_key}",
+                        },
+                        timeout=10.0,
+                    )
+                except httpx.HTTPError:
+                    pass
+        else:
+            try:
+                from pathlib import Path
+                Path(path).unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 @router.get("/{batch_id}", response_model=UploadBatchOut)

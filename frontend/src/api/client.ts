@@ -108,6 +108,10 @@ export const api = {
       method: "POST", body: form,
     });
   },
+  resetUploadedData: () =>
+    request<{ status: string; batches_removed: number; loans_removed: number }>("/api/v1/uploads/reset", {
+      method: "DELETE",
+    }),
   listVerified: () =>
     request<Array<{ id: string; loan_record_id: string; record_hash: string; verified_at: string }>>(
       "/api/v1/verified-loans"
