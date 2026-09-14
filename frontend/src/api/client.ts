@@ -1,6 +1,9 @@
 // Local development sets VITE_API_BASE_URL. On Vercel, same-origin rewrites
 // send /api/v1 requests to the FastAPI function without a separate API host.
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+const BASE_URL = import.meta.env.PROD && /localhost|127\.0\.0\.1/.test(configuredBaseUrl)
+  ? ""
+  : configuredBaseUrl;
 
 export type Role = "operator" | "reviewer" | "consumer";
 

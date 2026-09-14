@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
@@ -67,9 +68,12 @@ def upload_file(
     write_audit_event(db, event_type="file.uploaded", actor_id=profile.id,
                        detail={"batch_id": str(batch.id), "filename": file.filename})
 
-    if source_type == "loan_tape" and settings.database_mode == "supabase":
+    if source_type == "loan_tape" and (
+        settings.database_mode == "supabase" or os.getenv("VERCEL") == "1"
+    ):
         # Serverless functions may stop after sending a response. Complete the
-        # demo-sized ingestion before returning so no batch is left stranded.
+        # ingestion before returning so no batch is left stranded when a worker
+        # is not available to run BackgroundTasks.
         process_upload(db, batch.id, content)
     elif source_type == "loan_tape":
         background_tasks.add_task(_run_ingestion_in_new_session, batch.id, content)
